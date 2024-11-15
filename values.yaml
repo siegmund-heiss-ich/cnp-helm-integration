@@ -1,0 +1,101 @@
+networkPolicies:
+# Policy example
+  - name: "policy1"
+    endpointSelector:
+      matchLabels:
+        app: backend
+    ingress:
+      - fromEndpoints:
+          - matchLabels:
+              app: client
+        toPorts:
+          - ports:
+              - port: "5000"
+                protocol: TCP
+    egress:
+      - toEndpoints:
+          - matchLabels:
+              io.kubernetes.pod.namespace: kube-system
+              k8s-app: kube-dns
+        toPorts:
+          - ports:
+              - port: "53"
+                protocol: UDP
+# Policy example
+  - name: "poliy2"
+    endpointSelector:
+      matchLabels:
+        app: backend
+    ingress:
+      - fromEndpoints:
+          - matchLabels:
+              app: client
+        toPorts:
+          - ports:
+              - port: "5000"
+                protocol: TCP
+            rules:
+              http:
+                - method: GET
+                  path: /api/data
+                - method: POST
+                  path: /api/submit
+      - fromCIDRSet:
+          - cidr: 10.2.1.8/24
+        toPorts:
+          - ports:
+              - port: "9092"
+                protocol: TCP
+            rules:
+              kafka:
+                - apiKey: produce
+                  apiVersion: "2"
+                  topic: sensitive-data
+                - apiKey: fetch
+                  apiVersion: "3"
+                  topic: logs
+    egress:
+      - toEndpoints:
+          - matchLabels:
+              io.kubernetes.pod.namespace: kube-system
+              k8s-app: kube-dns
+        toPorts:
+          - ports:
+              - port: "53"
+                protocol: UDP
+            rules:
+              dns:
+                - matchPattern: test.example.com
+      - toCIDRSet:
+          - cidr: 192.168.1.0/24
+        toPorts:
+          - ports:
+              - port: "5000"
+                protocol: TCP
+            rules:
+              http:
+                - method: GET
+                  path: /external/data
+                - method: DELETE
+                  path: /external/remove
+      - toFQDNs:
+          - matchName: test.example.com
+        toPorts:
+          - ports:
+              - port: "5000"
+                protocol: TCP
+      - toEndpoints:
+          - matchLabels:
+              app: kafka-broker
+        toPorts:
+          - ports:
+              - port: "9092"
+                protocol: TCP
+            rules:
+              kafka:
+                - apiKey: metadata
+                  apiVersion: "1"
+                  topic: control-topic
+                - apiKey: describeGroups
+                  apiVersion: "0"
+                  topic: user-group
